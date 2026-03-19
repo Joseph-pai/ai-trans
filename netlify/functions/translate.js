@@ -81,12 +81,10 @@ function buildMessages(action, text) {
         {
           role: 'system',
           content:
-            'You are a professional translator. The user will provide English text with multiple paragraphs. ' +
-            'For EACH paragraph, output exactly in this format:\n' +
-            '[EN]: {original English paragraph}\n' +
-            '[ZH]: {Chinese translation of that paragraph}\n\n' +
-            'Separate each paragraph pair with a blank line. ' +
-            'Do NOT add any other text, headers, or explanations.',
+            'You are a professional translator. The user provides English paragraphs. ' +
+            'For EACH paragraph, provide exactly ONE paragraph of its Chinese translation. ' +
+            'Output ONLY the translated Chinese paragraphs, separated by a blank line. ' +
+            'Do NOT include symbols like [ZH], do NOT include the original English text, and do NOT add any introductions or explanations.',
         },
         { role: 'user', content: text || '' },
       ];

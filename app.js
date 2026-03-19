@@ -324,8 +324,8 @@ async function handlePromptTranslate() {
   }
 
   hideError(promptError);
-  setTranslateLoading(promptTransBtn, promptTransIcon, promptTransText, true, '翻譯中...');
-  promptOutput.value = '';
+  setTranslateLoading(promptTransBtn, promptTransIcon, promptTransText, true, '重新翻譯中...');
+  promptOutput.value = ''; // 立即清除舊內容
 
   try {
     const result = await callAPI({
@@ -335,7 +335,7 @@ async function handlePromptTranslate() {
       text,
     });
     promptOutput.value = result;
-    showToast('✅ 翻譯完成');
+    showToast('✅ 翻譯已更新');
   } catch (err) {
     showError(promptError, err.message);
   } finally {
@@ -359,91 +359,76 @@ async function handlePlanTranslate() {
   }
 
   hideError(planError);
-  setTranslateLoading(planTransBtn, planTransIcon, planTransText, true, '翻譯中...');
+  setTranslateLoading(planTransBtn, planTransIcon, planTransText, true, '正在分段翻譯...');
+  
+  // 初始化顯示狀態
   planOutput.innerHTML = '';
-  planPlaceholder.style.display = 'flex';
+  planPlaceholder.style.display = 'none';
   planPairs = [];
 
+  // 將原文按空行拆分為段落
+  const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim());
+  
+  // 分段處理（每 5 段一組，避免超時）
+  const chunkSize = 5;
+  const chunks = [];
+  for (let i = 0; i < paragraphs.length; i += chunkSize) {
+    chunks.push(paragraphs.slice(i, i + chunkSize));
+  }
+
   try {
-    const result = await callAPI({
-      platform: currentPlatform,
-      apiKey,
-      action: 'translate_plan',
-      text,
-    });
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i];
+      const chunkText = chunk.join('\n\n');
+      
+      if (chunks.length > 1) {
+        setTranslateLoading(planTransBtn, planTransIcon, planTransText, true, `翻中 (${i + 1}/${chunks.length})...`);
+      }
 
-    planPairs = parsePlanResult(result, text);
+      const result = await callAPI({
+        platform: currentPlatform,
+        apiKey,
+        action: 'translate_plan',
+        text: chunkText,
+      });
 
-    if (planPairs.length === 0) {
-      showError(planError, '無法解析翻譯結果，請重試。');
-    } else {
-      renderPlanPairs(planPairs);
-      planPlaceholder.style.display = 'none';
-      showToast(`✅ 翻譯完成，共 ${planPairs.length} 段`);
+      // 解析這一段的回傳
+      const translations = result.split(/\n\s*\n/).filter(p => p.trim());
+      
+      // 將原文段落與回傳的譯文配對
+      const count = Math.min(chunk.length, translations.length);
+      for (let j = 0; j < count; j++) {
+        const pair = { en: chunk[j].trim(), zh: translations[j].trim() };
+        planPairs.push(pair);
+        appendPlanPair(pair, planPairs.length - 1);
+      }
     }
+    
+    showToast(`✅ 翻譯完成，共 ${planPairs.length} 段`);
   } catch (err) {
     showError(planError, err.message);
+    if (planPairs.length === 0) planPlaceholder.style.display = 'flex';
   } finally {
     setTranslateLoading(planTransBtn, planTransIcon, planTransText, false, '生成中英對照');
   }
 }
 
 /**
- * Parse AI response for plan translation.
- * Expected format per paragraph:
- *   [EN]: original text
- *   [ZH]: translated text
+ * 原本的 parsePlanResult 已由 handlePlanTranslate 內部的配對邏輯取代
  */
-function parsePlanResult(result, fallbackOriginal) {
-  const pairs = [];
-
-  // Split by blank lines between pairs
-  const blocks = result.split(/\n\s*\n/);
-
-  for (const block of blocks) {
-    const lines = block.split('\n');
-    let en = '';
-    let zh = '';
-
-    for (const line of lines) {
-      if (line.startsWith('[EN]:')) {
-        en = line.replace('[EN]:', '').trim();
-      } else if (line.startsWith('[ZH]:')) {
-        zh = line.replace('[ZH]:', '').trim();
-      }
-    }
-
-    if (en && zh) {
-      pairs.push({ en, zh });
-    }
-  }
-
-  // Fallback: if AI returned plain translation without markers,
-  // split by newlines and pair them
-  if (pairs.length === 0) {
-    const originalParas = fallbackOriginal.split(/\n\s*\n/).filter((p) => p.trim());
-    const translatedLines = result.split(/\n\s*\n/).filter((p) => p.trim());
-    const count = Math.min(originalParas.length, translatedLines.length);
-    for (let i = 0; i < count; i++) {
-      pairs.push({ en: originalParas[i].trim(), zh: translatedLines[i].trim() });
-    }
-  }
-
-  return pairs;
+function appendPlanPair(pair, index) {
+  const div = document.createElement('div');
+  div.className = 'plan-pair' + (index % 2 === 0 ? '' : ' highlighted');
+  div.innerHTML = `
+    <p class="plan-en">${escapeHtml(pair.en)}</p>
+    <p class="plan-zh">${escapeHtml(pair.zh)}</p>
+  `;
+  planOutput.appendChild(div);
+  // 自動捲動到底部，讓用戶看到進度
+  div.scrollIntoView({ behavior: 'smooth', block: 'end' });
 }
 
-function renderPlanPairs(pairs) {
-  planOutput.innerHTML = '';
-  pairs.forEach((pair, i) => {
-    const div = document.createElement('div');
-    div.className = 'plan-pair' + (i % 2 === 0 ? '' : ' highlighted');
-    div.innerHTML = `
-      <p class="plan-en">${escapeHtml(pair.en)}</p>
-      <p class="plan-zh">${escapeHtml(pair.zh)}</p>
-    `;
-    planOutput.appendChild(div);
-  });
-}
+/* parsePlanResult 與 renderPlanPairs 已被取代 */
 
 
 // ══════════════════════════════════════════════════════════
