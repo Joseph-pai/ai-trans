@@ -438,9 +438,7 @@ function renderPlanPairs(pairs) {
     const div = document.createElement('div');
     div.className = 'plan-pair' + (i % 2 === 0 ? '' : ' highlighted');
     div.innerHTML = `
-      <div><span class="plan-lang-tag lang-en">EN</span></div>
       <p class="plan-en">${escapeHtml(pair.en)}</p>
-      <div><span class="plan-lang-tag lang-zh">中文</span></div>
       <p class="plan-zh">${escapeHtml(pair.zh)}</p>
     `;
     planOutput.appendChild(div);
