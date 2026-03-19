@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="AI 翻譯" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="description" content="使用 DeepSeek 或 Gemini AI 進行專業翻譯，支援提示詞翻譯與中英對照 Plan 翻譯" />
+
+  <title>AI 翻譯助手</title>
+
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ═══ NAVBAR ══════════════════════════════════════════ -->
+  <nav class="navbar">
+    <a class="nav-brand" href="#">
+      <img class="nav-logo" src="/icons/icon-192.png" alt="AI 翻譯 Logo" />
+      <span class="nav-title">AI 翻譯助手</span>
+    </a>
+    <div class="nav-actions">
+      <!-- AI Status indicator -->
+      <div id="navStatusBadge" class="status-badge idle">
+        <span class="status-dot"></span>
+        <span id="navStatusText">未連線</span>
+      </div>
+      <!-- Settings button -->
+      <button class="btn-icon" id="settingsBtn" title="AI 設定" aria-label="開啟 AI 設定">
+        ⚙️
+      </button>
+    </div>
+  </nav>
+
+  <!-- ═══ TAB BAR ══════════════════════════════════════════ -->
+  <div class="tab-bar" role="tablist">
+    <button class="tab-btn active" id="tab1Btn" role="tab" aria-selected="true" aria-controls="panel1">
+      ✨ 提示詞翻譯
+    </button>
+    <button class="tab-btn" id="tab2Btn" role="tab" aria-selected="false" aria-controls="panel2">
+      📋 Plan 翻譯
+    </button>
+  </div>
+
+  <!-- ═══ MAIN CONTENT ══════════════════════════════════════ -->
+  <main class="main-content">
+
+    <!-- ── Tab 1: 提示詞翻譯 ─────────────────────────────── -->
+    <div class="tab-panel active" id="panel1" role="tabpanel" aria-labelledby="tab1Btn">
+
+      <div class="card">
+        <div class="card-title">
+          <span class="title-icon">📝</span> 輸入中文
+        </div>
+        <label class="field-label" for="promptInput">在下方輸入要翻譯的中文內容</label>
+        <textarea
+          class="textarea textarea-input"
+          id="promptInput"
+          placeholder="例如：請生成一張賽博龐克風格的城市夜景，霓虹燈，雨天，電影感..."
+          rows="5"
+        ></textarea>
+        <div class="flex-end section-gap">
+          <button class="btn btn-secondary" id="promptClearBtn">清除</button>
+          <button class="btn btn-primary" id="promptTransBtn">
+            <span id="promptTransIcon">🌐</span>
+            <span id="promptTransText">翻譯為英文</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="card section-gap">
+        <div class="flex-between" style="margin-bottom:14px;">
+          <div class="card-title" style="margin-bottom:0;">
+            <span class="title-icon">🔤</span> 英文翻譯結果
+          </div>
+          <button class="btn btn-secondary btn-sm" id="promptCopyBtn" title="複製結果">
+            📋 複製
+          </button>
+        </div>
+        <div class="output-area">
+          <textarea
+            class="textarea textarea-output"
+            id="promptOutput"
+            readonly
+            placeholder="翻譯結果將顯示在這裡..."
+            rows="6"
+          ></textarea>
+        </div>
+        <div id="promptError" class="error-msg section-gap" style="display:none;"></div>
+      </div>
+
+    </div>
+
+    <!-- ── Tab 2: Plan 翻譯 ──────────────────────────────── -->
+    <div class="tab-panel" id="panel2" role="tabpanel" aria-labelledby="tab2Btn">
+
+      <div class="card">
+        <div class="card-title">
+          <span class="title-icon">📄</span> 貼入英文內容
+        </div>
+        <label class="field-label" for="planInput">貼上要翻譯的英文長文（支援多段落）</label>
+        <textarea
+          class="textarea textarea-input"
+          id="planInput"
+          placeholder="Paste your English text here... Supports long documents with multiple paragraphs."
+          rows="8"
+          style="min-height:180px;"
+        ></textarea>
+        <div class="flex-end section-gap">
+          <button class="btn btn-secondary" id="planClearBtn">清除</button>
+          <button class="btn btn-primary" id="planTransBtn">
+            <span id="planTransIcon">🌐</span>
+            <span id="planTransText">生成中英對照</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="card section-gap">
+        <div class="flex-between" style="margin-bottom:14px;">
+          <div class="card-title" style="margin-bottom:0;">
+            <span class="title-icon">🔄</span> 中英對照結果
+          </div>
+          <div class="flex-row">
+            <button class="btn btn-secondary btn-sm" id="planCopyBtn">📋 複製全文</button>
+            <button class="btn btn-secondary btn-sm" id="planCopyZhBtn">📋 只複製中文</button>
+          </div>
+        </div>
+
+        <div class="plan-result-container" id="planResultContainer">
+          <div class="plan-result-placeholder" id="planPlaceholder">
+            <span>🔄</span>
+            <span>翻譯結果將以中英對照顯示</span>
+          </div>
+          <div class="plan-output" id="planOutput"></div>
+        </div>
+        <div id="planError" class="error-msg section-gap" style="display:none;"></div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ═══ SETTINGS DRAWER ══════════════════════════════════ -->
+  <div class="drawer-overlay" id="drawerOverlay"></div>
+  <aside class="drawer" id="settingsDrawer" aria-label="AI 設定">
+
+    <div class="drawer-header">
+      <span class="drawer-title">⚙️ AI 設定</span>
+      <button class="btn-icon" id="drawerCloseBtn" aria-label="關閉設定">✕</button>
+    </div>
+
+    <div class="drawer-body">
+
+      <!-- Platform Selection -->
+      <div>
+        <label class="field-label">選擇 AI 平台</label>
+        <div class="platform-selector">
+          <label class="platform-card selected" id="cardDeepSeek">
+            <input type="radio" name="platform" value="deepseek" checked />
+            <div class="platform-check"></div>
+            <span class="platform-icon">🤖</span>
+            <span class="platform-name">DeepSeek</span>
+          </label>
+          <label class="platform-card" id="cardGemini">
+            <input type="radio" name="platform" value="gemini" />
+            <div class="platform-check"></div>
+            <span class="platform-icon">✨</span>
+            <span class="platform-name">Gemini</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- API Key Input -->
+      <div>
+        <label class="field-label" for="apiKeyInput" id="apiKeyLabel">DeepSeek API Key</label>
+        <div class="api-key-wrap">
+          <input
+            type="password"
+            class="input"
+            id="apiKeyInput"
+            placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button class="api-key-toggle" id="apiKeyToggle" type="button" title="顯示/隱藏 Key">👁</button>
+        </div>
+        <p style="font-size:0.75rem;color:var(--text-muted);margin-top:6px;line-height:1.5;">
+          API Key 僅儲存在本裝置，不會上傳至任何伺服器。
+        </p>
+      </div>
+
+      <!-- Connect & Save Button -->
+      <button class="btn btn-primary" id="connectBtn" style="width:100%;">
+        <span id="connectIcon">🔗</span>
+        <span id="connectText">連線測試 / 儲存</span>
+      </button>
+
+      <!-- Connection Status -->
+      <div class="conn-status" id="connStatus"></div>
+
+      <!-- Tips -->
+      <div style="border-top:1px solid var(--border-color);padding-top:16px;">
+        <p class="field-label" style="margin-bottom:10px;">取得 API Key</p>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noopener"
+            style="font-size:0.82rem;color:var(--accent);text-decoration:none;display:flex;align-items:center;gap:6px;">
+            🔗 DeepSeek API 控制台
+          </a>
+          <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener"
+            style="font-size:0.82rem;color:var(--accent);text-decoration:none;display:flex;align-items:center;gap:6px;">
+            🔗 Google AI Studio（Gemini）
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- ═══ TOAST CONTAINER ══════════════════════════════════ -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
