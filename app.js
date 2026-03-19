@@ -271,14 +271,13 @@ async function handleConnect() {
 
 function setConnectLoading(loading) {
   connectBtn.disabled = loading;
+  const currentIcon = document.getElementById('connectIcon');
   if (loading) {
-    connectIcon.outerHTML = '<span id="connectIcon" class="spinner"></span>';
-    $('connectIcon').outerHTML = '<span class="spinner" id="connectIcon"></span>';
+    if (currentIcon) currentIcon.outerHTML = '<span class="spinner" id="connectIcon"></span>';
     connectText.textContent = '連線測試中...';
   } else {
+    if (currentIcon) currentIcon.outerHTML = '<span id="connectIcon">🔗</span>';
     connectText.textContent = '連線測試 / 儲存';
-    const iconEl = $('connectIcon');
-    if (iconEl) iconEl.textContent = '🔗';
   }
 }
 
@@ -485,12 +484,12 @@ function getApiKey() {
 
 function setTranslateLoading(btn, iconEl, textEl, loading, label) {
   btn.disabled = loading;
+  const currentIcon = document.getElementById(iconEl.id);
   if (loading) {
-    iconEl.outerHTML = `<span class="spinner" id="${iconEl.id}"></span>`;
+    if (currentIcon) currentIcon.outerHTML = `<span class="spinner" id="${iconEl.id}"></span>`;
     textEl.textContent = label;
   } else {
-    const el = document.getElementById(iconEl.id);
-    if (el) el.outerHTML = `<span id="${iconEl.id}">🌐</span>`;
+    if (currentIcon) currentIcon.outerHTML = `<span id="${iconEl.id}">🌐</span>`;
     textEl.textContent = label;
   }
 }
