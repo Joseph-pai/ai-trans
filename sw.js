@@ -1,5 +1,5 @@
 // Service Worker for AI 翻譯助手
-const CACHE_NAME = 'ai-trans-v1';
+const CACHE_NAME = 'ai-trans-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -37,17 +37,17 @@ self.addEventListener('fetch', (event) => {
     return; // Let browser handle normally
   }
 
-  // Cache-first strategy for static assets
+  // Network-first strategy: 永遠先向網路索取最新版本，失敗/離線時才降級使用快取
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request).then((response) => {
-        if (response && response.status === 200 && response.type === 'basic') {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-        }
-        return response;
-      });
+    fetch(event.request).then((response) => {
+      if (response && response.status === 200 && response.type === 'basic') {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+      }
+      return response;
+    }).catch(() => {
+      // 網路請求失敗時，嘗試從快取讀取
+      return caches.match(event.request);
     })
   );
 });
