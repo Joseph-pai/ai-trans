@@ -379,7 +379,8 @@ async function handlePlanTranslate() {
   try {
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i];
-      const chunkText = chunk.join('\n\n');
+      // 將字串陣列轉為 JSON 發送，確保 AI 能一對一翻譯
+      const chunkText = JSON.stringify(chunk);
       
       if (chunks.length > 1) {
         setTranslateLoading(planTransBtn, planTransIcon, planTransText, true, `翻中 (${i + 1}/${chunks.length})...`);
@@ -392,15 +393,29 @@ async function handlePlanTranslate() {
         text: chunkText,
       });
 
-      // 解析這一段的回傳
-      const translations = result.split(/\n\s*\n/).filter(p => p.trim());
+      // 解析這一段的回傳（預期為 JSON 陣列）
+      let translations = [];
+      try {
+        // 清理 AI 可能附帶的 markdown 引號，確保是純 JSON
+        const cleanResult = result.replace(/^```(json)?/i, '').replace(/```$/i, '').trim();
+        translations = JSON.parse(cleanResult);
+      } catch (e) {
+        // 若 AI 回傳的不是純 JSON，降級使用換行符拆分
+        translations = result.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+      }
       
-      // 將原文段落與回傳的譯文配對
-      const count = Math.min(chunk.length, translations.length);
+      // 將原文與回傳的譯文配對顯示
+      const count = Math.max(chunk.length, translations.length);
       for (let j = 0; j < count; j++) {
-        const pair = { en: chunk[j].trim(), zh: translations[j].trim() };
-        planPairs.push(pair);
-        appendPlanPair(pair, planPairs.length - 1);
+        const pair = { 
+          en: chunk[j] ? chunk[j].trim() : '', 
+          zh: translations[j] ? translations[j].toString().trim() : '' 
+        };
+        // 忽略沒有內容的雜訊配對
+        if (pair.en || pair.zh) {
+          planPairs.push(pair);
+          appendPlanPair(pair, planPairs.length - 1);
+        }
       }
     }
     

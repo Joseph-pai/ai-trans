@@ -81,12 +81,13 @@ function buildMessages(action, text) {
         {
           role: 'system',
           content:
-            'You are a professional translator. The user provides English paragraphs. ' +
-            'For EACH paragraph, provide exactly ONE paragraph of its Chinese translation. ' +
-            'Output ONLY the translated Chinese paragraphs, separated by a blank line. ' +
-            'Do NOT include symbols like [ZH], do NOT include the original English text, and do NOT add any introductions or explanations.',
+            'You are a professional translator. The user provides a JSON array of English strings. ' +
+            'Translate EACH string into Chinese. ' +
+            'Output exactly a JSON array of strings containing the Chinese translations in the exact same order. ' +
+            'Ensure the length of the output array matches the length of the input array. ' +
+            'Return ONLY the JSON array. Do NOT output any markdown code blocks (like ```json), explanations, or extra text.'
         },
-        { role: 'user', content: text || '' },
+        { role: 'user', content: text || '[]' },
       ];
 
     default:
