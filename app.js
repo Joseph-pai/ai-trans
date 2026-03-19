@@ -366,14 +366,14 @@ async function handlePlanTranslate() {
   planPlaceholder.style.display = 'none';
   planPairs = [];
 
-  // 將原文按空行拆分為段落
-  const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim());
+  // 將原文以「換行」拆分，並過濾掉空白行
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
   
-  // 分段處理（每 5 段一組，避免超時）
-  const chunkSize = 5;
+  // 分段處理（每 10 行一組，避免超時並確保配對）
+  const chunkSize = 10;
   const chunks = [];
-  for (let i = 0; i < paragraphs.length; i += chunkSize) {
-    chunks.push(paragraphs.slice(i, i + chunkSize));
+  for (let i = 0; i < lines.length; i += chunkSize) {
+    chunks.push(lines.slice(i, i + chunkSize));
   }
 
   try {
