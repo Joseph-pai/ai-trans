@@ -456,7 +456,17 @@ async function callAPI(payload) {
     body: JSON.stringify(payload),
   });
 
-  const data = await response.json();
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('text/html')) {
+    throw new Error('伺服器設定錯誤 (收到 HTML 而非 JSON)。請確認 Netlify Functions 是否部署成功。');
+  }
+
+  let data;
+  try {
+    data = await response.json();
+  } catch (e) {
+    throw new Error('無法解析伺服器回應 (Invalid JSON)。');
+  }
 
   if (!response.ok || data.error) {
     throw new Error(data.error || `HTTP ${response.status}`);

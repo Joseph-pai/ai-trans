@@ -8,6 +8,14 @@ const CORS_HEADERS = {
   'Content-Type': 'application/json',
 };
 
+// Always return 200 so frontend can parse error details from JSON body
+function ok(body) {
+  return { statusCode: 200, headers: CORS_HEADERS, body: JSON.stringify(body) };
+}
+function fail(message) {
+  return { statusCode: 200, headers: CORS_HEADERS, body: JSON.stringify({ error: message }) };
+}
+
 exports.handler = async function (event) {
   // Handle CORS preflight
   if (event.httpMethod === 'OPTIONS') {
@@ -15,25 +23,20 @@ exports.handler = async function (event) {
   }
 
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Method Not Allowed' }) };
+    return fail('Method Not Allowed');
   }
 
   let body;
   try {
     body = JSON.parse(event.body || '{}');
   } catch {
-    return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: '無效的請求格式 (JSON parse error)' }) };
+    return fail('無效的請求格式 (JSON parse error)');
   }
 
   const { platform, apiKey, action, text } = body;
 
-  if (!platform || !apiKey) {
-    return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: '缺少必要參數：platform 或 apiKey' }) };
-  }
-
-  if (!action) {
-    return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: '缺少必要參數：action' }) };
-  }
+  if (!platform || !apiKey) return fail('缺少必要參數：platform 或 apiKey');
+  if (!action) return fail('缺少必要參數：action');
 
   try {
     let result;
@@ -44,18 +47,14 @@ exports.handler = async function (event) {
     } else if (platform === 'gemini') {
       result = await callGemini(apiKey, action, text);
     } else {
-      return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: `不支援的 AI 平台: ${platform}` }) };
+      return fail(`不支援的 AI 平台: ${platform}，請選擇 deepseek 或 gemini`);
     }
 
-    return { statusCode: 200, headers: CORS_HEADERS, body: JSON.stringify({ result }) };
+    return ok({ result });
 
   } catch (err) {
     console.error('[translate] Error:', err.message);
-    return {
-      statusCode: 502,
-      headers: CORS_HEADERS,
-      body: JSON.stringify({ error: err.message || '翻譯服務異常，請稍後再試' }),
-    };
+    return fail(err.message || '翻譯服務異常，請稍後再試');
   }
 };
 

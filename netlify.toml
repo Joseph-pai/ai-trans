@@ -5,6 +5,14 @@
 [build.environment]
   NODE_VERSION = "18"
 
+# Functions must take priority — explicitly force-route function paths
+[[redirects]]
+  from = "/.netlify/functions/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+  force = true
+
+# SPA fallback for all other paths
 [[redirects]]
   from = "/*"
   to = "/index.html"
